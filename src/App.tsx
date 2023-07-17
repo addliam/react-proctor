@@ -138,7 +138,7 @@ function App() {
         Lorem ipsum dolor sit amet consectetur adipisicing elit. Asperiores in
         consectetur molestiae doloremque dignissimos ratione aut.
       </p>
-      <FaceDetection />
+      <FaceDetection addStrikeHistoryFunction={addStrikeHistory} />
       <h3>
         Numero strikes: {strikeHistory.length} - Esta pantalla completa:{" "}
         {isFullScreen ? "SI" : "NO"}

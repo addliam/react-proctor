@@ -1,7 +1,11 @@
 import * as faceapi from "face-api.js";
 import React, { useState, useRef, useEffect } from "react";
 
-function FaceDetection() {
+interface FaceDetectionProps {
+  addStrikeHistoryFunction: Function;
+}
+
+function FaceDetection({ addStrikeHistoryFunction }: FaceDetectionProps) {
   const [modelsLoaded, setModelsLoaded] = useState<boolean>(false);
   const [captureVideo, setCaptureVideo] = useState(false);
   const [faceDetected, setFaceDetected] = useState(false);
@@ -16,7 +20,8 @@ function FaceDetection() {
     console.log(timer);
 
     if (timer >= 4000) {
-      window.alert("No se detecto rostro en 4 segundos");
+      // window.alert("No se detecto rostro en 4 segundos");
+      addStrikeHistoryFunction("webcam", "No se detecto rostro en 4 segundos");
       setTimer(0); // Reset the timer
     }
 
