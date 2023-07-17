@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import "./App.css";
 import alertAudioSource from "./assets/amber_alert_short.mp3";
+import FaceDetection from "./components/FaceDetection";
 
 interface StrikeElement {
   type: string;
@@ -127,7 +128,7 @@ function App() {
     // El tiempo de demora es necesario para que no haya una race condition y marque un strike inicial en el historial
     setTimeout(() => {
       setIsTestTime(true);
-    }, 100);
+    }, 300);
   };
 
   return (
@@ -137,6 +138,7 @@ function App() {
         Lorem ipsum dolor sit amet consectetur adipisicing elit. Asperiores in
         consectetur molestiae doloremque dignissimos ratione aut.
       </p>
+      <FaceDetection />
       <h3>
         Numero strikes: {strikeHistory.length} - Esta pantalla completa:{" "}
         {isFullScreen ? "SI" : "NO"}
