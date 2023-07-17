@@ -1,0 +1,4 @@
+.no-select {
+  user-select: none; /* Deshabilita la selección de texto */
+  pointer-events: none; /* Deshabilita los eventos de puntero (incluido el arrastre) */
+}
