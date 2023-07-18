@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import "./App.css";
 import alertAudioSource from "./assets/amber_alert_short.mp3";
 import FaceDetection from "./components/FaceDetection";
+import ScreenShare from "./components/ScreenShare";
+import PreventExit from "./components/PreventExit";
 
 interface StrikeElement {
   type: string;
@@ -131,14 +133,51 @@ function App() {
     }, 300);
   };
 
+  // window.addEventListener("beforeunload", function (e) {
+  //   var confirmationMessage = "o/";
+
+  //   (e || window.event).returnValue = confirmationMessage; //Gecko + IE
+  //   return confirmationMessage; //Webkit, Safari, Chrome
+  // });
+  // window.onbeforeunload = function () {
+  //   return "Do you really want to close?";
+  // };
+
+  document.body.addEventListener("beforeunload", function (event) {
+    // Cancel the event as a fallback
+    event.preventDefault();
+
+    // Chrome requires returnValue to be set
+    const confirmationMessage = "Are you sure you want to leave this page?";
+
+    return confirmationMessage;
+  });
+
+  // mensaje de confirmacion al salir
+  const thereAreUnsavedChanges = (): boolean => {
+    // TODO: cambiar esta funcion de acuerdo a algun estado
+    return true;
+  };
+  function onBeforeUnload(e: any) {
+    if (thereAreUnsavedChanges()) {
+      e.preventDefault();
+      e.returnValue = "";
+      return;
+    }
+    delete e["returnValue"];
+  }
+  window.addEventListener("beforeunload", onBeforeUnload);
+
   return (
     <div>
+      {/* <PreventExit /> */}
       <h1>React Proctor</h1>
       <p>
         Lorem ipsum dolor sit amet consectetur adipisicing elit. Asperiores in
         consectetur molestiae doloremque dignissimos ratione aut.
       </p>
       <FaceDetection addStrikeHistoryFunction={addStrikeHistory} />
+      <ScreenShare />
       <h3>
         Numero strikes: {strikeHistory.length} - Esta pantalla completa:{" "}
         {isFullScreen ? "SI" : "NO"}
