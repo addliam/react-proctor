@@ -1,9 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import "./App.css";
 import alertAudioSource from "./assets/amber_alert_short.mp3";
 import FaceDetection from "./components/FaceDetection";
 import ScreenShare from "./components/ScreenShare";
-import PreventExit from "./components/PreventExit";
 
 interface StrikeElement {
   type: string;
@@ -133,16 +132,6 @@ function App() {
     }, 300);
   };
 
-  // window.addEventListener("beforeunload", function (e) {
-  //   var confirmationMessage = "o/";
-
-  //   (e || window.event).returnValue = confirmationMessage; //Gecko + IE
-  //   return confirmationMessage; //Webkit, Safari, Chrome
-  // });
-  // window.onbeforeunload = function () {
-  //   return "Do you really want to close?";
-  // };
-
   document.body.addEventListener("beforeunload", function (event) {
     // Cancel the event as a fallback
     event.preventDefault();
@@ -167,6 +156,11 @@ function App() {
     delete e["returnValue"];
   }
   window.addEventListener("beforeunload", onBeforeUnload);
+  // crear referencia a ScreenShare para acceder a su funcion captureFrame
+  const screenShareRef = useRef<any>(null);
+  const callFunctionScreenShare = () => {
+    screenShareRef.current.captureFrame();
+  };
 
   return (
     <div>
@@ -177,7 +171,9 @@ function App() {
         consectetur molestiae doloremque dignissimos ratione aut.
       </p>
       <FaceDetection addStrikeHistoryFunction={addStrikeHistory} />
-      <ScreenShare />
+      {/* Pasar la funcion hija ScreenShare al padre App.tsx  */}
+      <ScreenShare ref={screenShareRef} />
+      <button onClick={() => callFunctionScreenShare()}>Capturar Frame</button>
       <h3>
         Numero strikes: {strikeHistory.length} - Esta pantalla completa:{" "}
         {isFullScreen ? "SI" : "NO"}
