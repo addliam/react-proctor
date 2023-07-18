@@ -105,6 +105,12 @@ function App() {
         document.title = "Alerta! Vuelve a la prueba";
         addStrikeHistory("pestana", "Salio de pestana");
         setShouldPlayAlertAudio(true);
+        // tomar captura de pantalla cuando hay un cambio de pestana
+        setTimeout(() => {
+          setInterval(() => {
+            callFunctionScreenShare();
+          }, 5000);
+        }, 300);
       }
     };
     window.addEventListener("focus", focusFunction);
