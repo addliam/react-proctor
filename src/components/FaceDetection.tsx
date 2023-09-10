@@ -3,9 +3,15 @@ import React, { useState, useRef, useEffect } from "react";
 
 interface FaceDetectionProps {
   addStrikeHistoryFunction: Function;
+  isTestTime: Boolean;
 }
+// socketServicio
+import { socketService } from "../services/socketService";
 
-function FaceDetection({ addStrikeHistoryFunction }: FaceDetectionProps) {
+function FaceDetection({
+  addStrikeHistoryFunction,
+  isTestTime,
+}: FaceDetectionProps) {
   const [modelsLoaded, setModelsLoaded] = useState<boolean>(false);
   const [captureVideo, setCaptureVideo] = useState(false);
   const [faceDetected, setFaceDetected] = useState(false);
@@ -18,15 +24,22 @@ function FaceDetection({ addStrikeHistoryFunction }: FaceDetectionProps) {
 
   useEffect(() => {
     console.log(timer);
-
-    if (timer >= 4000) {
-      // window.alert("No se detecto rostro en 4 segundos");
-      addStrikeHistoryFunction("webcam", "No se detecto rostro en 4 segundos");
-      setTimer(0); // Reset the timer
+    if (isTestTime) {
+      if (timer >= 4000) {
+        // window.alert("No se detecto rostro en 4 segundos");
+        let idEvento = 1;
+        addStrikeHistoryFunction(
+          "webcam",
+          `No se detecto rostro en 4 segundos - ${idEvento}`
+        );
+        setTimer(0); // Reset the timer
+        // Registrar evento en el backend por conexion websocket
+        socketService.emitLogEvent(`${idEvento}`);
+      }
     }
 
     return () => {};
-  }, [timer]);
+  }, [timer, isTestTime]);
 
   useEffect(() => {
     const loadModels = async () => {

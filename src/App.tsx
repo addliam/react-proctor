@@ -3,6 +3,8 @@ import "./App.css";
 import alertAudioSource from "./assets/amber_alert_short.mp3";
 import FaceDetection from "./components/FaceDetection";
 import ScreenShare from "./components/ScreenShare";
+// servicio de conexion websocket
+import { socketService } from "./services/socketService";
 
 interface StrikeElement {
   type: string;
@@ -15,6 +17,28 @@ function App() {
   const [shouldPlayAlertAudio, setShouldPlayAlertAudio] = useState(false);
   const [strikeHistory, setStrikeHistory] = useState<StrikeElement[]>([]);
   const [isTestTime, setIsTestTime] = useState(false);
+  // valores necesarios para las API call
+  const [userId, setUserId] = useState("");
+  const [testId, setTestId] = useState("");
+  const [duracionSegundos, setDuracionSegundos] = useState<Number>(0);
+  // websocket
+  const [isConnected, setIsConnected] = useState<Boolean>(false);
+  const [socketId, setSocketId] = useState("");
+
+  useEffect(() => {
+    // Iniciar valores por defecto hard-codeados, en implementacion sera dinamico
+    setUserId("U0002");
+    setTestId("T0010");
+    setDuracionSegundos(1 * 60 * 10);
+    // conexion socket inicial
+    socketService.connect((socketId: any) => {
+      setSocketId(socketId);
+    });
+
+    setSocketId("id");
+    setIsConnected(true);
+    return () => {};
+  }, []);
 
   // Bloquear el evento de copiar
   document.addEventListener("copy", (event) => {
@@ -62,7 +86,13 @@ function App() {
 
   useEffect(() => {
     if (!isFullScreen && isTestTime) {
-      addStrikeHistory("fullscreen", "Salio de pantalla completa");
+      let idEvento = 3;
+      addStrikeHistory(
+        "fullscreen",
+        `Salio de pantalla completa - ${idEvento}`
+      );
+      // Registrar evento en el backend por conexion websocket
+      socketService.emitLogEvent(`${idEvento}`);
     }
     return () => {};
   }, [isFullScreen, isTestTime]);
@@ -103,14 +133,16 @@ function App() {
       }
       if (isTestTime) {
         document.title = "Alerta! Vuelve a la prueba";
-        addStrikeHistory("pestana", "Salio de pestana");
+        let idEvento = 2;
+        addStrikeHistory("pestana", `Salio de pestana - ${idEvento}`);
+        // Registrar evento en el backend por conexion websocket
+        socketService.emitLogEvent(`${idEvento}`);
+
         setShouldPlayAlertAudio(true);
         // tomar captura de pantalla cuando hay un cambio de pestana
         setTimeout(() => {
-          setInterval(() => {
-            callFunctionScreenShare();
-          }, 5000);
-        }, 300);
+          callFunctionScreenShare();
+        }, 500);
       }
     };
     window.addEventListener("focus", focusFunction);
@@ -131,11 +163,20 @@ function App() {
 
   // preparacion para empezar el Test
   const setupTest = () => {
+    // Inicializar llamada "start" en websocket
+    console.log("Starting conn");
+    socketService.emitStart(userId, testId, duracionSegundos);
+    // Iniciar propias de la funcionalidad supervision
     setDocumentFullScreen();
+    let tiempoDemoraMillis = 1000;
     // El tiempo de demora es necesario para que no haya una race condition y marque un strike inicial en el historial
+    // El tiempo de demora varia de acuerdo a los recurso de la pc
     setTimeout(() => {
       setIsTestTime(true);
-    }, 300);
+    }, tiempoDemoraMillis);
+  };
+  const finishTest = () => {
+    setIsTestTime(false);
   };
 
   document.body.addEventListener("beforeunload", function (event) {
@@ -173,13 +214,33 @@ function App() {
       {/* <PreventExit /> */}
       <h1>React Proctor</h1>
       <p>
+        VITE_BACKEND_SUPERVISION_API{" "}
+        {import.meta.env.VITE_BACKEND_SUPERVISION_API}
+      </p>
+      <h4>DATA PARA LA COMUNICACION CON APIS</h4>
+      {
+        <>
+          <p>userId: {userId}</p>
+          <p>testId: {testId}</p>
+          <p>duracionSegundos: {`${duracionSegundos}`}</p>
+        </>
+      }
+      <p>
         Lorem ipsum dolor sit amet consectetur adipisicing elit. Asperiores in
         consectetur molestiae doloremque dignissimos ratione aut.
       </p>
-      <FaceDetection addStrikeHistoryFunction={addStrikeHistory} />
+      {
+        <p>
+          Connectado a websocket: {`${isConnected}`} - {socketId}
+        </p>
+      }
+      <FaceDetection
+        addStrikeHistoryFunction={addStrikeHistory}
+        isTestTime={isTestTime}
+      />
       {/* Pasar la funcion hija ScreenShare al padre App.tsx  */}
       <ScreenShare ref={screenShareRef} />
-      <button onClick={() => callFunctionScreenShare()}>Capturar Frame</button>
+      {/* <button onClick={() => callFunctionScreenShare()}>Capturar Frame</button> */}
       <h3>
         Numero strikes: {strikeHistory.length} - Esta pantalla completa:{" "}
         {isFullScreen ? "SI" : "NO"}
@@ -192,6 +253,7 @@ function App() {
           </p>
         ))}
       <button onClick={() => setupTest()}>Empezar prueba</button>
+      <button onClick={() => finishTest()}>Finalizar prueba</button>
       <br />
       <div>
         {/* clase css `no-select` desactiva la seleccion de texto para copiar */}

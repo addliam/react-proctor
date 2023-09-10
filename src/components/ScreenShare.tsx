@@ -54,6 +54,8 @@ const ScreenShare = forwardRef((props, ref) => {
       if (context) {
         context.drawImage(videoElem, 0, 0, videoWidth, videoHeight);
         const imageData = canvasElem.toDataURL("image/png");
+        // API_CALL: subir elemento png a la api de ScreenshotStorage.
+
         setCapturedImages((prevImages) => [...prevImages, imageData]);
       }
     }
