@@ -91,9 +91,11 @@ const ScreenShare = forwardRef((props: ScreenShareProps, ref) => {
       if (context) {
         context.drawImage(videoElem, 0, 0, videoWidth, videoHeight);
         const imageData = canvasElem.toDataURL("image/png");
+        console.log(imageData);
+
         // API_CALL: subir elemento png a la api de ScreenshotStorage.
 
-        setCapturedImages((prevImages) => [...prevImages, imageData]);
+        // setCapturedImages((prevImages) => [...prevImages, imageData]);
       }
     }
   }
@@ -108,9 +110,10 @@ const ScreenShare = forwardRef((props: ScreenShareProps, ref) => {
       {isScreenSharing && (
         <div
           style={{
+            display: "none",
             width: videoWidth,
             height: videoHeight,
-            border: "1px solid red",
+            border: "1px solid green",
           }}
         >
           <video
@@ -125,22 +128,25 @@ const ScreenShare = forwardRef((props: ScreenShareProps, ref) => {
       <button onClick={startCapture}>START</button>
       <button onClick={stopCapture}>STOP</button>
       {isScreenSharing && (
-        <div
-          id="capture-div"
-          style={{
-            width: videoWidth,
-            height: videoHeight,
-            border: "1px solid red",
-          }}
-        >
-          <canvas
-            ref={canvasRef}
-            style={{ display: "none" }}
-            width={videoWidth}
-            height={videoHeight}
-          />
-          {/* <button onClick={() => captureFrame()}>Capture</button> */}
-        </div>
+        <>
+          <button onClick={() => captureFrame()}>Capture</button>
+          <div
+            id="capture-div"
+            style={{
+              display: "none",
+              width: videoWidth,
+              height: videoHeight,
+              border: "1px solid yellow",
+            }}
+          >
+            <canvas
+              ref={canvasRef}
+              style={{ display: "none" }}
+              width={videoWidth}
+              height={videoHeight}
+            />
+          </div>
+        </>
       )}
       <div
         className="images-container"
@@ -152,7 +158,7 @@ const ScreenShare = forwardRef((props: ScreenShareProps, ref) => {
           marginTop: "16px",
         }}
       >
-        {capturedImages.map((imageData, index) => {
+        {/* {capturedImages.map((imageData, index) => {
           console.log(imageData);
           return (
             <div key={index}>
@@ -164,7 +170,7 @@ const ScreenShare = forwardRef((props: ScreenShareProps, ref) => {
               />
             </div>
           );
-        })}
+        })} */}
       </div>
     </div>
   );

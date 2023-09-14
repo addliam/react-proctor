@@ -195,6 +195,7 @@ function FaceDetection({
             <div
               id="capture-div"
               style={{
+                display: "none",
                 width: videoWidth,
                 height: videoHeight,
                 border: "1px solid red",
