@@ -23,7 +23,10 @@ function App() {
   const [duracionSegundos, setDuracionSegundos] = useState<Number>(0);
   // websocket
   const [isConnected, setIsConnected] = useState<Boolean>(false);
-  const [socketId, setSocketId] = useState("");
+  const [socketId, setSocketId] = useState("null-id");
+  // estados de verificacion, camaraActiva, pantallaCompartida
+  const [camaraActiva, setCamaraActiva] = useState<Boolean>(false);
+  const [pantallaCompartida, setPantallaCompartida] = useState<Boolean>(false);
 
   useEffect(() => {
     // Iniciar valores por defecto hard-codeados, en implementacion sera dinamico
@@ -33,10 +36,9 @@ function App() {
     // conexion socket inicial
     socketService.connect((socketId: any) => {
       setSocketId(socketId);
+      setIsConnected(true);
     });
-
-    setSocketId("id");
-    setIsConnected(true);
+    // setSocketId("id");
     return () => {};
   }, []);
 
@@ -163,6 +165,12 @@ function App() {
 
   // preparacion para empezar el Test
   const setupTest = () => {
+    // revisar si se inicializo la camara y pantalla compartida
+    console.log({ camaraActiva, pantallaCompartida });
+    if (!camaraActiva || !pantallaCompartida) {
+      alert("ERROR. La camara y pantalla deben inicialiarze!");
+      return;
+    }
     // Inicializar llamada "start" en websocket
     console.log("Starting conn");
     socketService.emitStart(userId, testId, duracionSegundos);
@@ -237,9 +245,10 @@ function App() {
       <FaceDetection
         addStrikeHistoryFunction={addStrikeHistory}
         isTestTime={isTestTime}
+        stateHandler={setCamaraActiva}
       />
       {/* Pasar la funcion hija ScreenShare al padre App.tsx  */}
-      <ScreenShare ref={screenShareRef} />
+      <ScreenShare ref={screenShareRef} stateHandler={setPantallaCompartida} />
       {/* <button onClick={() => callFunctionScreenShare()}>Capturar Frame</button> */}
       <h3>
         Numero strikes: {strikeHistory.length} - Esta pantalla completa:{" "}

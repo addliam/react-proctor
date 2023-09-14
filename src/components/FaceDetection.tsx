@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 interface FaceDetectionProps {
   addStrikeHistoryFunction: Function;
   isTestTime: Boolean;
+  stateHandler: Function;
 }
 // socketServicio
 import { socketService } from "../services/socketService";
@@ -11,6 +12,7 @@ import { socketService } from "../services/socketService";
 function FaceDetection({
   addStrikeHistoryFunction,
   isTestTime,
+  stateHandler,
 }: FaceDetectionProps) {
   const [modelsLoaded, setModelsLoaded] = useState<boolean>(false);
   const [captureVideo, setCaptureVideo] = useState(false);
@@ -18,19 +20,29 @@ function FaceDetection({
   const [timer, setTimer] = useState<number>(10); // New state variable
 
   const videoRef = useRef<HTMLVideoElement>(null);
-  const videoHeight = 480 / 3;
-  const videoWidth = 640 / 3;
+  const standard = {
+    "2160p": [3840, 2160],
+    "1440p": [2560, 1440],
+    "1080p": [1920, 1080],
+    "720p": [1280, 720],
+    "480p": [854, 480],
+    "360p": [640, 360],
+    "240p": [426, 240],
+    "144p": [256, 144],
+  };
+  const resolution = "144p";
+  const videoWidth = standard[resolution][0];
+  const videoHeight = standard[resolution][1];
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    console.log(timer);
     if (isTestTime) {
-      if (timer >= 4000) {
+      if (timer >= 5000) {
         // window.alert("No se detecto rostro en 4 segundos");
         let idEvento = 1;
         addStrikeHistoryFunction(
           "webcam",
-          `No se detecto rostro en 4 segundos - ${idEvento}`
+          `No se detecto rostro en 5 segundos - ${idEvento}`
         );
         setTimer(0); // Reset the timer
         // Registrar evento en el backend por conexion websocket
@@ -44,8 +56,6 @@ function FaceDetection({
   useEffect(() => {
     const loadModels = async () => {
       const MODEL_URL = import.meta.env.BASE_URL + "/models";
-      console.log(MODEL_URL);
-
       Promise.all([faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL)]).then(
         () => setModelsLoaded(true)
       );
@@ -54,11 +64,14 @@ function FaceDetection({
   }, []);
 
   const startVideo = () => {
+    // inicializar estado "camaraActiva" usando el handler
+    stateHandler(true);
+    // funcionamiento
     setCaptureVideo(true);
     setFaceDetected(false);
     // setTimer(0); // Reset timer when starting video
     navigator.mediaDevices
-      .getUserMedia({ video: { width: 300 } })
+      .getUserMedia({ video: { width: videoWidth, height: videoHeight } })
       .then((stream) => {
         let video: HTMLVideoElement | null = videoRef.current;
         if (video) {
@@ -91,8 +104,6 @@ function FaceDetection({
 
         if (detections.length === 0) {
           setFaceDetected(false); // Update faceDetected state
-          console.log("[-] No hay rostros");
-
           setTimer((prev) => prev + 100); // Increment the timer by 100ms
         } else {
           setFaceDetected(true); // Update faceDetected state
@@ -128,6 +139,20 @@ function FaceDetection({
     setFaceDetected(false);
   };
 
+  function captureFrame() {
+    const videoElem = videoRef.current;
+    const canvasElem = canvasRef.current;
+
+    if (videoElem && canvasElem) {
+      const context = canvasElem.getContext("2d");
+      if (context) {
+        context.drawImage(videoElem, 0, 0, videoWidth, videoHeight);
+        const imageData = canvasElem.toDataURL("image/png");
+        console.log(imageData);
+      }
+    }
+  }
+
   return (
     <div>
       <div style={{ textAlign: "center", padding: "10px" }}>
@@ -135,7 +160,10 @@ function FaceDetection({
           <p>Rostro detectado: {!faceDetected ? "NO" : "SI"}</p>
         </div>
         {captureVideo && modelsLoaded ? (
-          <button onClick={closeWebcam}>Close Webcam</button>
+          <>
+            <button onClick={closeWebcam}>Close Webcam</button>
+            <button onClick={captureFrame}>Capture Webcam</button>
+          </>
         ) : (
           <button onClick={startVideo}>Open Webcam</button>
         )}
@@ -157,7 +185,27 @@ function FaceDetection({
                 onPlay={handleVideoOnPlay}
                 style={{ borderRadius: "4px" }}
               />
-              <canvas ref={canvasRef} style={{ position: "absolute" }} />
+              {/* <canvas
+                ref={canvasRef}
+                style={{ display: "none" }}
+                width={videoWidth}
+                height={videoHeight}
+              /> */}
+            </div>
+            <div
+              id="capture-div"
+              style={{
+                width: videoWidth,
+                height: videoHeight,
+                border: "1px solid red",
+              }}
+            >
+              <canvas
+                ref={canvasRef}
+                style={{ display: "none" }}
+                width={videoWidth}
+                height={videoHeight}
+              />
             </div>
           </div>
         ) : (

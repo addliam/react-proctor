@@ -4,23 +4,39 @@ import React, {
   forwardRef,
   useImperativeHandle,
 } from "react";
-
-const ScreenShare = forwardRef((props, ref) => {
+interface ScreenShareProps {
+  stateHandler: Function;
+}
+const ScreenShare = forwardRef((props: ScreenShareProps, ref) => {
   const [isScreenSharing, setIsScreenSharing] = useState<boolean>(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [capturedImages, setCapturedImages] = useState<string[]>([]);
 
-  const videoHeight = 480 / 3;
-  const videoWidth = 640 / 3;
+  const standard = {
+    "2160p": [3840, 2160],
+    "1440p": [2560, 1440],
+    "1080p": [1920, 1080],
+    "720p": [1280, 720],
+    "480p": [854, 480],
+    "360p": [640, 360],
+    "240p": [426, 240],
+  };
+
+  const resolution = "480p";
+  const videoWidth = standard[resolution][0];
+  const videoHeight = standard[resolution][1];
   const displayMediaOptions = {
     video: {
-      displaySurface: "window",
+      displaySurface: "monitor",
     },
     audio: false,
   };
 
   async function startCapture() {
+    // inicializar estado "camaraActiva" usando el handler
+    props.stateHandler(true);
+    // funcionamiento
     setIsScreenSharing(true);
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia(
@@ -66,11 +82,18 @@ const ScreenShare = forwardRef((props, ref) => {
   }));
 
   return (
-    <div style={{ width: "100%" }}>
+    <div style={{ width: "auto" }}>
       <h4>Screen sharing!</h4>
       {isScreenSharing && (
-        <div>
+        <div
+          style={{
+            width: videoWidth,
+            height: videoHeight,
+            border: "1px solid red",
+          }}
+        >
           <video
+            id="screen-sharing"
             ref={videoRef}
             height={videoHeight}
             width={videoWidth}
@@ -81,7 +104,14 @@ const ScreenShare = forwardRef((props, ref) => {
       <button onClick={startCapture}>START</button>
       <button onClick={stopCapture}>STOP</button>
       {isScreenSharing && (
-        <div>
+        <div
+          id="capture-div"
+          style={{
+            width: videoWidth,
+            height: videoHeight,
+            border: "1px solid red",
+          }}
+        >
           <canvas
             ref={canvasRef}
             style={{ display: "none" }}
@@ -101,11 +131,19 @@ const ScreenShare = forwardRef((props, ref) => {
           marginTop: "16px",
         }}
       >
-        {capturedImages.map((imageData, index) => (
-          <div key={index}>
-            <img src={imageData} alt={`Captured Frame ${index}`} />
-          </div>
-        ))}
+        {capturedImages.map((imageData, index) => {
+          console.log(imageData);
+          return (
+            <div key={index}>
+              <img
+                width={videoWidth}
+                height={videoHeight}
+                src={imageData}
+                alt={`Captured Frame ${index}`}
+              />
+            </div>
+          );
+        })}
       </div>
     </div>
   );
