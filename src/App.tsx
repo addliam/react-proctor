@@ -5,6 +5,7 @@ import FaceDetection from "./components/FaceDetection";
 import ScreenShare from "./components/ScreenShare";
 // servicio de conexion websocket
 import { socketService } from "./services/socketService";
+import Panel from "./components/Panel";
 
 interface StrikeElement {
   type: string;
@@ -27,6 +28,7 @@ function App() {
   // estados de verificacion, camaraActiva, pantallaCompartida
   const [camaraActiva, setCamaraActiva] = useState<Boolean>(false);
   const [pantallaCompartida, setPantallaCompartida] = useState<Boolean>(false);
+  const [rostroDetectado, setRostroDetectado] = useState<Boolean>(false);
 
   useEffect(() => {
     // Iniciar valores por defecto hard-codeados, en implementacion sera dinamico
@@ -220,6 +222,12 @@ function App() {
   return (
     <div>
       {/* <PreventExit /> */}
+      <Panel
+        pantalla={pantallaCompartida}
+        camara={camaraActiva}
+        fullScreen={isFullScreen}
+        rostro={rostroDetectado}
+      />
       <h1>React Proctor</h1>
       <p>
         VITE_BACKEND_SUPERVISION_API{" "}
@@ -246,6 +254,7 @@ function App() {
         addStrikeHistoryFunction={addStrikeHistory}
         isTestTime={isTestTime}
         stateHandler={setCamaraActiva}
+        setRostroDetectado={setRostroDetectado}
       />
       {/* Pasar la funcion hija ScreenShare al padre App.tsx  */}
       <ScreenShare ref={screenShareRef} stateHandler={setPantallaCompartida} />

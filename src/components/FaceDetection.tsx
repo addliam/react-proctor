@@ -5,6 +5,7 @@ interface FaceDetectionProps {
   addStrikeHistoryFunction: Function;
   isTestTime: Boolean;
   stateHandler: Function;
+  setRostroDetectado: Function;
 }
 // socketServicio
 import { socketService } from "../services/socketService";
@@ -13,6 +14,7 @@ function FaceDetection({
   addStrikeHistoryFunction,
   isTestTime,
   stateHandler,
+  setRostroDetectado,
 }: FaceDetectionProps) {
   const [modelsLoaded, setModelsLoaded] = useState<boolean>(false);
   const [captureVideo, setCaptureVideo] = useState(false);
@@ -36,6 +38,12 @@ function FaceDetection({
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
+    // replicar estado faceDetected para compartir al padre
+    setRostroDetectado(faceDetected);
+    return () => {};
+  }, [faceDetected]);
+
+  useEffect(() => {
     if (isTestTime) {
       if (timer >= 5000) {
         // window.alert("No se detecto rostro en 4 segundos");
@@ -47,6 +55,8 @@ function FaceDetection({
         setTimer(0); // Reset the timer
         // Registrar evento en el backend por conexion websocket
         socketService.emitLogEvent(`${idEvento}`);
+        // lanzar trigger en setter del padre
+        setRostroDetectado(true);
       }
     }
 
