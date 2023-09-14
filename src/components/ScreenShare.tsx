@@ -34,25 +34,46 @@ const ScreenShare = forwardRef((props: ScreenShareProps, ref) => {
   };
 
   async function startCapture() {
-    // inicializar estado "camaraActiva" usando el handler
-    props.stateHandler(true);
     // funcionamiento
     setIsScreenSharing(true);
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia(
         displayMediaOptions
       );
-      videoRef.current!.srcObject = stream;
-      videoRef.current!.play().catch((error) => {
-        console.error("Failed to play the video:", error);
-      });
+      // Validacion: Debe compartir pantalla completa, sino se reinicia el procedimiento
+      let displaySurface = stream
+        .getVideoTracks()[0]
+        .getSettings().displaySurface;
+      if (displaySurface !== "monitor") {
+        // detener captura pantalla actual que no es monitor
+        stream.getTracks().forEach((track) => track.stop());
+        alert("Selection de pantalla completa es obligatorio!");
+        props.stateHandler(false);
+        setTimeout(() => {
+          startCapture();
+        }, 100);
+      } else {
+        // inicializar estado "camaraActiva" usando el handler
+        props.stateHandler(true);
+        videoRef.current!.srcObject = stream;
+        videoRef.current!.play().catch((error) => {
+          console.error("Failed to play the video:", error);
+        });
+        // anadir listener al boton "Dejar de compartir" del navegador
+        stream.getVideoTracks()[0].addEventListener("ended", () => {
+          stopCapture();
+        });
+      }
     } catch (err) {
+      props.stateHandler(false);
+      setIsScreenSharing(false);
       console.error(err);
     }
   }
 
   function stopCapture() {
     setIsScreenSharing(false);
+    props.stateHandler(false);
     const videoElem = videoRef.current;
     if (videoElem && videoElem.srcObject instanceof MediaStream) {
       const tracks = videoElem.srcObject.getTracks();
@@ -118,7 +139,7 @@ const ScreenShare = forwardRef((props: ScreenShareProps, ref) => {
             width={videoWidth}
             height={videoHeight}
           />
-          <button onClick={() => captureFrame()}>Capture</button>
+          {/* <button onClick={() => captureFrame()}>Capture</button> */}
         </div>
       )}
       <div
