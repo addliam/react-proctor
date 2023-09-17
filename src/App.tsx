@@ -6,6 +6,7 @@ import ScreenShare from "./components/ScreenShare";
 // servicio de conexion websocket
 import { socketService } from "./services/socketService";
 import Panel from "./components/Panel";
+import { socket } from "./socket";
 
 interface StrikeElement {
   type: string;
@@ -29,11 +30,14 @@ function App() {
   const [camaraActiva, setCamaraActiva] = useState<Boolean>(false);
   const [pantallaCompartida, setPantallaCompartida] = useState<Boolean>(false);
   const [rostroDetectado, setRostroDetectado] = useState<Boolean>(false);
+  // valor cargado posteriormente por websocket
+  const [userTestId, setUserTestId] = useState("");
 
   useEffect(() => {
-    // Iniciar valores por defecto hard-codeados, en implementacion sera dinamico
-    setUserId("U0002");
-    setTestId("T0010");
+    // TODO: cambiar esto
+    // Iniciar DATA por defecto hard-codeados, en implementacion sera dinamico
+    setUserId("USER3");
+    setTestId("TEST2");
     setDuracionSegundos(1 * 60 * 10);
     // conexion socket inicial
     socketService.connect((socketId: any) => {
@@ -144,9 +148,11 @@ function App() {
 
         setShouldPlayAlertAudio(true);
         // tomar captura de pantalla cuando hay un cambio de pestana
+        // establecer un tiempo de espera moderado para tener una buena captura de la pantalla del candidato
+        const tiempoEsperaCapturaPantallaMs = 1000;
         setTimeout(() => {
           callFunctionScreenShare();
-        }, 500);
+        }, tiempoEsperaCapturaPantallaMs);
       }
     };
     window.addEventListener("focus", focusFunction);
@@ -176,6 +182,13 @@ function App() {
     // Inicializar llamada "start" en websocket
     console.log("Starting conn");
     socketService.emitStart(userId, testId, duracionSegundos);
+    // obtener userTestId dado por sockets
+    socket.once("usuario_test_id", (...args) => {
+      // obtiene el userTest asignado
+      let asssignedUserTestId = args[0];
+      setUserTestId(asssignedUserTestId);
+    });
+
     // Iniciar propias de la funcionalidad supervision
     setDocumentFullScreen();
     let tiempoDemoraMillis = 1000;
@@ -251,19 +264,24 @@ function App() {
         </p>
       }
       <FaceDetection
+        userTestId={userTestId}
         addStrikeHistoryFunction={addStrikeHistory}
         isTestTime={isTestTime}
         stateHandler={setCamaraActiva}
         setRostroDetectado={setRostroDetectado}
       />
       {/* Pasar la funcion hija ScreenShare al padre App.tsx  */}
-      <ScreenShare ref={screenShareRef} stateHandler={setPantallaCompartida} />
+      <ScreenShare
+        userTestId={userTestId}
+        ref={screenShareRef}
+        stateHandler={setPantallaCompartida}
+      />
       {/* <button onClick={() => callFunctionScreenShare()}>Capturar Frame</button> */}
       <h3>
         Numero strikes: {strikeHistory.length} - Esta pantalla completa:{" "}
         {isFullScreen ? "SI" : "NO"}
       </h3>
-      <h4>HISTORIAL</h4>
+      <h4>HISTORIAL - USERTESTID: {userTestId}</h4>
       {strikeHistory.length > 0 &&
         strikeHistory.map((element: StrikeElement, indx) => (
           <p key={indx}>

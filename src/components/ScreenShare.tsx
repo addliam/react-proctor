@@ -1,17 +1,24 @@
 import React, {
   useRef,
+  useEffect,
   useState,
   forwardRef,
   useImperativeHandle,
 } from "react";
+import { screenshotStorageService } from "../services/screenshotStorage.service";
 interface ScreenShareProps {
   stateHandler: Function;
+  userTestId: string;
 }
 const ScreenShare = forwardRef((props: ScreenShareProps, ref) => {
   const [isScreenSharing, setIsScreenSharing] = useState<boolean>(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [capturedImages, setCapturedImages] = useState<string[]>([]);
+  const [userTestId, setUserTestId] = useState<string>(props.userTestId);
+  useEffect(() => {
+    setUserTestId(props.userTestId);
+    return () => {};
+  }, [props.userTestId]);
 
   const standard = {
     "2160p": [3840, 2160],
@@ -91,11 +98,14 @@ const ScreenShare = forwardRef((props: ScreenShareProps, ref) => {
       if (context) {
         context.drawImage(videoElem, 0, 0, videoWidth, videoHeight);
         const imageData = canvasElem.toDataURL("image/png");
-        console.log(imageData);
-
-        // API_CALL: subir elemento png a la api de ScreenshotStorage.
-
-        // setCapturedImages((prevImages) => [...prevImages, imageData]);
+        console.log(
+          `Subiendo base64data: captura de pantalla\nUserTestId: ${userTestId}`
+        );
+        screenshotStorageService.postBase64Data(
+          imageData,
+          userTestId,
+          "pantalla"
+        );
       }
     }
   }

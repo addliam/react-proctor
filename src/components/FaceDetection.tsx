@@ -3,25 +3,30 @@ import React, { useState, useRef, useEffect } from "react";
 
 interface FaceDetectionProps {
   addStrikeHistoryFunction: Function;
-  isTestTime: Boolean;
+  isTestTime: boolean;
   stateHandler: Function;
   setRostroDetectado: Function;
+  userTestId: string;
 }
 // socketServicio
 import { socketService } from "../services/socketService";
+import { screenshotStorageService } from "../services/screenshotStorage.service";
+// valor definido en config
+import { tiempoIntervaloCapturaRostroMs } from "../config";
 
 function FaceDetection({
   addStrikeHistoryFunction,
   isTestTime,
   stateHandler,
   setRostroDetectado,
+  userTestId,
 }: FaceDetectionProps) {
   const [modelsLoaded, setModelsLoaded] = useState<boolean>(false);
   const [captureVideo, setCaptureVideo] = useState(false);
   const [faceDetected, setFaceDetected] = useState(false);
   const [timer, setTimer] = useState<number>(10); // New state variable
-
   const videoRef = useRef<HTMLVideoElement>(null);
+
   const standard = {
     "2160p": [3840, 2160],
     "1440p": [2560, 1440],
@@ -36,6 +41,29 @@ function FaceDetection({
   const videoWidth = standard[resolution][0];
   const videoHeight = standard[resolution][1];
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    // Cuando es tiempo de prueba (isTestTime) empezar el ciclo de generar capturas del rostro cada cierto tiempo
+    var capturaRostro: any;
+    if (isTestTime) {
+      capturaRostro = setInterval(() => {
+        if (isTestTime) {
+          console.log(`Buscando capturar rostro...`);
+          console.log({ userTestId });
+          let imageData: string = captureFrame();
+          screenshotStorageService.postBase64Data(
+            imageData,
+            userTestId,
+            "rostro"
+          );
+        }
+      }, tiempoIntervaloCapturaRostroMs);
+    }
+    return () => {
+      // cuando desarme este componente, parar la captura en intervalos
+      clearInterval(capturaRostro);
+    };
+  }, [isTestTime]);
 
   useEffect(() => {
     // replicar estado faceDetected para compartir al padre
@@ -149,18 +177,18 @@ function FaceDetection({
     setFaceDetected(false);
   };
 
-  function captureFrame() {
+  function captureFrame(): string {
+    var imageData = "";
     const videoElem = videoRef.current;
     const canvasElem = canvasRef.current;
-
     if (videoElem && canvasElem) {
       const context = canvasElem.getContext("2d");
       if (context) {
         context.drawImage(videoElem, 0, 0, videoWidth, videoHeight);
-        const imageData = canvasElem.toDataURL("image/png");
-        console.log(imageData);
+        imageData = canvasElem.toDataURL("image/png");
       }
     }
+    return imageData;
   }
 
   return (
@@ -168,6 +196,7 @@ function FaceDetection({
       <div style={{ textAlign: "center", padding: "10px" }}>
         <div>
           <p>Rostro detectado: {!faceDetected ? "NO" : "SI"}</p>
+          <p>UserTestID: {userTestId}</p>
         </div>
         {captureVideo && modelsLoaded ? (
           <>
