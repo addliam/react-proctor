@@ -39,7 +39,6 @@ const Panel = ({ pantalla, camara, fullScreen, rostro }: PanelProps) => {
       style={{
         backgroundColor: "yellow",
         borderRadius: "5px",
-        position: "fixed",
         padding: "8px 16px",
       }}
     >

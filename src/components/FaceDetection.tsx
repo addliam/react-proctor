@@ -12,7 +12,7 @@ interface FaceDetectionProps {
 import { socketService } from "../services/socketService";
 import { screenshotStorageService } from "../services/screenshotStorage.service";
 // valor definido en config
-import { tiempoIntervaloCapturaRostroMs } from "../config";
+import { config } from "../config";
 
 function FaceDetection({
   addStrikeHistoryFunction,
@@ -42,22 +42,22 @@ function FaceDetection({
   const videoHeight = standard[resolution][1];
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  const capturarRostroYAlmacenar = () => {
+    console.log(`Buscando capturar rostro...`);
+    console.log({ userTestId });
+    let imageData: string = captureFrame();
+    screenshotStorageService.postBase64Data(imageData, userTestId, "rostro");
+  };
+
   useEffect(() => {
     // Cuando es tiempo de prueba (isTestTime) empezar el ciclo de generar capturas del rostro cada cierto tiempo
     var capturaRostro: any;
     if (isTestTime) {
       capturaRostro = setInterval(() => {
         if (isTestTime) {
-          console.log(`Buscando capturar rostro...`);
-          console.log({ userTestId });
-          let imageData: string = captureFrame();
-          screenshotStorageService.postBase64Data(
-            imageData,
-            userTestId,
-            "rostro"
-          );
+          capturarRostroYAlmacenar();
         }
-      }, tiempoIntervaloCapturaRostroMs);
+      }, config.tiempoIntervaloCapturaRostroMs);
     }
     return () => {
       // cuando desarme este componente, parar la captura en intervalos
@@ -166,6 +166,8 @@ function FaceDetection({
   };
 
   const closeWebcam = () => {
+    // Establecer el estado en panel a false
+    stateHandler(false);
     if (videoRef.current) {
       videoRef.current.pause();
       const stream = videoRef.current.srcObject as MediaStream;
@@ -201,7 +203,9 @@ function FaceDetection({
         {captureVideo && modelsLoaded ? (
           <>
             <button onClick={closeWebcam}>Close Webcam</button>
-            <button onClick={captureFrame}>Capture Webcam</button>
+            <button onClick={() => capturarRostroYAlmacenar()}>
+              Capture Webcam
+            </button>
           </>
         ) : (
           <button onClick={startVideo}>Open Webcam</button>

@@ -7,6 +7,7 @@ import ScreenShare from "./components/ScreenShare";
 import { socketService } from "./services/socketService";
 import Panel from "./components/Panel";
 import { socket } from "./socket";
+import { config } from "./config";
 
 interface StrikeElement {
   type: string;
@@ -32,11 +33,24 @@ function App() {
   const [rostroDetectado, setRostroDetectado] = useState<Boolean>(false);
   // valor cargado posteriormente por websocket
   const [userTestId, setUserTestId] = useState("");
+  // Referencia al boton "Finalizar prueba"
+  const finishButtonRef = useRef<HTMLButtonElement>(null);
+
+  // manejador de finalizacion de prueba  para finalizacion automatico cuando se alcance el tope de eventos
+  useEffect(() => {
+    if (strikeHistory.length >= config.numeroMaximoEventos) {
+      console.log(
+        `Se alcanzo el numero maximo de eventos: ${config.numeroMaximoEventos}.\nFinalizando test`
+      );
+      finishButtonRef.current?.click();
+    }
+    return () => {};
+  }, [strikeHistory]);
 
   useEffect(() => {
     // TODO: cambiar esto
     // Iniciar DATA por defecto hard-codeados, en implementacion sera dinamico
-    setUserId("USER3");
+    setUserId("U1809-1119");
     setTestId("TEST2");
     setDuracionSegundos(1 * 60 * 10);
     // conexion socket inicial
@@ -200,6 +214,7 @@ function App() {
   };
   const finishTest = () => {
     setIsTestTime(false);
+    alert("La prueba ha finalizado!");
   };
 
   document.body.addEventListener("beforeunload", function (event) {
@@ -235,12 +250,14 @@ function App() {
   return (
     <div>
       {/* <PreventExit /> */}
-      <Panel
-        pantalla={pantallaCompartida}
-        camara={camaraActiva}
-        fullScreen={isFullScreen}
-        rostro={rostroDetectado}
-      />
+      <div style={{ position: "fixed", right: 10 }}>
+        <Panel
+          pantalla={pantallaCompartida}
+          camara={camaraActiva}
+          fullScreen={isFullScreen}
+          rostro={rostroDetectado}
+        />
+      </div>
       <h1>React Proctor</h1>
       <p>
         VITE_BACKEND_SUPERVISION_API{" "}
@@ -289,7 +306,9 @@ function App() {
           </p>
         ))}
       <button onClick={() => setupTest()}>Empezar prueba</button>
-      <button onClick={() => finishTest()}>Finalizar prueba</button>
+      <button ref={finishButtonRef} onClick={() => finishTest()}>
+        Finalizar prueba
+      </button>
       <br />
       <div>
         {/* clase css `no-select` desactiva la seleccion de texto para copiar */}

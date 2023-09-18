@@ -22,7 +22,7 @@ const postBase64Data = async (
       };
       axios
         .post(URL, data)
-        .then((res) => console.log(res.data))
+        .then()
         .catch((err) => console.error(err));
 
       break;
@@ -34,7 +34,7 @@ const postBase64Data = async (
       };
       axios
         .post(URL, data)
-        .then((res) => console.log(res.data))
+        .then()
         .catch((err) => console.error(err));
 
       break;
