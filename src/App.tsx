@@ -32,9 +32,7 @@ function App() {
   const [pantallaCompartida, setPantallaCompartida] = useState<Boolean>(false);
   const [rostroDetectado, setRostroDetectado] = useState<Boolean>(false);
   // valor cargado posteriormente por websocket
-  const [userTestId, setUserTestId] = useState("");
-  // Referencia al boton "Finalizar prueba"
-  const finishButtonRef = useRef<HTMLButtonElement>(null);
+  const [userTestId, setUserTestId] = useState<string | null>("");
 
   // manejador de finalizacion de prueba  para finalizacion automatico cuando se alcance el tope de eventos
   useEffect(() => {
@@ -42,7 +40,7 @@ function App() {
       console.log(
         `Se alcanzo el numero maximo de eventos: ${config.numeroMaximoEventos}.\nFinalizando test`
       );
-      finishButtonRef.current?.click();
+      finishTest();
     }
     return () => {};
   }, [strikeHistory]);
@@ -50,7 +48,7 @@ function App() {
   useEffect(() => {
     // TODO: cambiar esto
     // Iniciar DATA por defecto hard-codeados, en implementacion sera dinamico
-    setUserId("U1809-1119");
+    setUserId("U1809-1219");
     setTestId("TEST2");
     setDuracionSegundos(1 * 60 * 10);
     // conexion socket inicial
@@ -200,17 +198,24 @@ function App() {
     socket.once("usuario_test_id", (...args) => {
       // obtiene el userTest asignado
       let asssignedUserTestId = args[0];
-      setUserTestId(asssignedUserTestId);
+      // si la respuesta del usuario_test_id se nula o no existe quiere decir que el test no esta disponible
+      if (!asssignedUserTestId || asssignedUserTestId === "null") {
+        setUserTestId(null);
+        finishTest();
+        alert("Prueba no disponible!");
+        return;
+      } else {
+        setUserTestId(asssignedUserTestId);
+        // Iniciar propias de la funcionalidad supervision
+        setDocumentFullScreen();
+        let tiempoDemoraMillis = 1000;
+        // El tiempo de demora es necesario para que no haya una race condition y marque un strike inicial en el historial
+        // El tiempo de demora varia de acuerdo a los recurso de la pc
+        setTimeout(() => {
+          setIsTestTime(true);
+        }, tiempoDemoraMillis);
+      }
     });
-
-    // Iniciar propias de la funcionalidad supervision
-    setDocumentFullScreen();
-    let tiempoDemoraMillis = 1000;
-    // El tiempo de demora es necesario para que no haya una race condition y marque un strike inicial en el historial
-    // El tiempo de demora varia de acuerdo a los recurso de la pc
-    setTimeout(() => {
-      setIsTestTime(true);
-    }, tiempoDemoraMillis);
   };
   const finishTest = () => {
     setIsTestTime(false);
@@ -281,7 +286,7 @@ function App() {
         </p>
       }
       <FaceDetection
-        userTestId={userTestId}
+        userTestId={`${userTestId}`}
         addStrikeHistoryFunction={addStrikeHistory}
         isTestTime={isTestTime}
         stateHandler={setCamaraActiva}
@@ -289,7 +294,7 @@ function App() {
       />
       {/* Pasar la funcion hija ScreenShare al padre App.tsx  */}
       <ScreenShare
-        userTestId={userTestId}
+        userTestId={`${userTestId}`}
         ref={screenShareRef}
         stateHandler={setPantallaCompartida}
       />
@@ -306,9 +311,7 @@ function App() {
           </p>
         ))}
       <button onClick={() => setupTest()}>Empezar prueba</button>
-      <button ref={finishButtonRef} onClick={() => finishTest()}>
-        Finalizar prueba
-      </button>
+      <button onClick={() => finishTest()}>Finalizar prueba</button>
       <br />
       <div>
         {/* clase css `no-select` desactiva la seleccion de texto para copiar */}
